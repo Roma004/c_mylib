@@ -66,7 +66,6 @@ enum VEC_STATUS vector_resize(struct vector *vec, size_t new_size);
  * - После этой опреации размер вектора увеличится на els_num.
  * - Размер выделенной памяти будет достаточен для хранения size + els_num
  *   элементов.
- * - Память для новых элементов не будет выделена.
  * - Обращение по индексам диапазона [size, size+els_num) станет безопасным
  *   для записи, но чтение от туда - UB.
  * - если определён метод инициализации по-умолчанию, он будет вызван в новом
@@ -98,7 +97,7 @@ void vector_delete(struct vector *vec);
     }
 
 #define VECTOR_PUSH_BACK(status, vec, _el) { \
-    typeof(vec->data[0]) *el = _el; \
+    typeof((vec)->data[0]) el = _el; \
     status = vector_push_back(VEC(vec), &el); \
 }
 
