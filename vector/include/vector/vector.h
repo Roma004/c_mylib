@@ -90,16 +90,20 @@ void vector_delete(struct vector *vec);
 
 #define VECTOR_INIT(vec, _default_init, _destroy)                    \
     {                                                                \
+        void (*init_fn)(typeof(*((vec)->data)) *) = _default_init;   \
+        void (*destroy_fn)(typeof(*((vec)->data)) *) = _destroy;     \
         struct el_manage __mtds = {                                  \
-            .default_init = _default_init, .destroy = _destroy       \
+            .default_init = (void (*)(void *))init_fn,               \
+            .destroy = (void (*)(void *))destroy_fn,                 \
         };                                                           \
         vector_init((void *)(vec), sizeof(*((vec)->data)), &__mtds); \
     }
 
-#define VECTOR_PUSH_BACK(status, vec, _el) { \
-    typeof((vec)->data[0]) el = _el; \
-    status = vector_push_back(VEC(vec), &el); \
-}
+#define VECTOR_PUSH_BACK(status, vec, _el)        \
+    {                                             \
+        typeof((vec)->data[0]) el = _el;          \
+        status = vector_push_back(VEC(vec), &el); \
+    }
 
 #define VECTOR_ACCESS(vec, idx)                        \
     ((typeof(*((vec)->data)) *)((uint8_t *)(vec)->data \
