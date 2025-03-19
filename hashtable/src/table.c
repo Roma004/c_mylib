@@ -1,15 +1,21 @@
 #include "common/iterator.h"
 #include "hashtable/hashtable-inners.h"
 #include "hashtable/hashtable.h"
-#include "common/helpers.h"
 #include "vector/vector.h"
+
+void destroy_pair(const void *super, void *self) {
+    const HashTable *tb = super;
+    TB_NODE_KEY_DESTROY(tb, self);
+    TB_NODE_VAL_DESTROY(tb, self);
+}
 
 enum TB_STATUS hashtable_init(
     HashTable *tb, size_t key_size, size_t val_size, struct pair_manage *mtds
 ) {
     enum TB_STATUS stt = TB_ok;
     struct el_manage vec_mtds = {
-        .destroy = mtds->destroy,
+        .destroy = &destroy_pair,
+        .super = tb,
     };
 
     *tb = (struct hashtable){
@@ -53,7 +59,7 @@ hashtable_find(const HashTable *tb, const void *key, HashTableIterator *pos) {
             hashtable_end(tb, pos);
             return TB_key_error;
         }
-        if (tb->mtds.key_cmp(key, TB_NODE_KEY_PTR(tb, i))) {
+        if (TB_KEY_CMP(tb, key, TB_NODE_KEY_PTR(tb, i))) {
             hashtable_iter_init(tb, pos, i);
             return TB_ok;
         }

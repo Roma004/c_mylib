@@ -17,7 +17,7 @@ vector_data_realloc(struct vector *vec, size_t new_size) {
     }
     if (new_size < vec->size && vec->el_mtds.destroy) {
         for (int i = new_size; i < vec->size; ++i)
-            vec->el_mtds.destroy(VECTOR_ACCESS(vec, i));
+            vec->el_mtds.destroy(vec->el_mtds.super, VECTOR_ACCESS(vec, i));
     }
     void *tmp = realloc(vec->data, new_size * vec->el_size);
     if (!tmp) return VEC_memory_error;
@@ -41,13 +41,6 @@ static inline enum VEC_STATUS vector_shrink(struct vector *vec) {
     size_t new_capacity = vec->capacity;
     new_capacity /= 2;
     return vector_data_realloc(vec, new_capacity);
-}
-
-struct vector *vector_new(size_t el_size, const struct el_manage *mtds) {
-    struct vector *res = malloc(sizeof(*res));
-    if (res == NULL) return res;
-    vector_init(res, el_size, mtds);
-    return res;
 }
 
 void vector_init(
@@ -89,7 +82,7 @@ void vector_clear(struct vector *vec) {
     if (vec == NULL) return;
     if (vec->el_mtds.destroy) {
         for (int i = 0; i < vec->size; ++i) {
-            vec->el_mtds.destroy(VECTOR_ACCESS(vec, i));
+            vec->el_mtds.destroy(vec->el_mtds.super, VECTOR_ACCESS(vec, i));
         }
     }
     free(vec->data);
@@ -116,19 +109,15 @@ enum VEC_STATUS vector_alloc_back(struct vector *vec, size_t els_num) {
     vec->size += els_num;
     if (vec->el_mtds.default_init) {
         for (int i = 0; i < els_num; ++i) {
-            vec->el_mtds.default_init(VECTOR_ACCESS_RIHGT(vec, i));
+            vec->el_mtds.default_init(
+                vec->el_mtds.super, VECTOR_ACCESS_RIHGT(vec, i)
+            );
         }
     }
     return VEC_ok;
 }
 
 void vector_free(struct vector *vec) { vector_clear(vec); }
-
-void vector_delete(struct vector *vec) {
-    if (vec == NULL) return;
-    vector_free(vec);
-    free(vec);
-}
 
 enum VEC_STATUS vector_get(const struct vector *vec, void *dst, size_t idx) {
     if (idx >= vec->size) return VEC_index_error;
@@ -144,7 +133,9 @@ enum VEC_STATUS vector_set(struct vector *vec, const void *src, size_t idx) {
 
 enum VEC_STATUS vector_remove(struct vector *vec, size_t idx) {
     if (idx >= vec->size) return VEC_index_error;
-    if (vec->el_mtds.destroy) { vec->el_mtds.destroy(VECTOR_ACCESS(vec, idx)); }
+    if (vec->el_mtds.destroy) {
+        vec->el_mtds.destroy(vec->el_mtds.super, VECTOR_ACCESS(vec, idx));
+    }
     if (idx != vec->size - 1)
         memmove(
             VECTOR_ACCESS(vec, idx),

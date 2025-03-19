@@ -2,7 +2,8 @@
 #include <stddef.h>
 /////////////////////////////// HASH FUNCTIONS /////////////////////////////////
 
-#define DEFINE_HASH_FUNC(type_name) size_t type_name##_hash(const void *ptr)
+#define DEFINE_HASH_FUNC(type_name) \
+    size_t type_name##_hash(const void *super, const void *ptr)
 
 #define DECLARE_HASH_FUNC(type_name, nbytes)      \
     DEFINE_HASH_FUNC(type_name) {                 \
@@ -20,13 +21,13 @@ DEFINE_HASH_FUNC(uint);
 
 ///////////////////////////////// COMPARATORS /////////////////////////////////
 #define DEFINE_COMPARATOR(type_name) \
-    int type_name##_cmp(const void *a, const void *b)
+    int type_name##_cmp(const void *super, const void *a, const void *b)
 
 #define DECLARE_COMPARATOR(type_name, nbytes) \
     DEFINE_COMPARATOR(type_name) { return memcmp(a, b, nbytes) == 0; }
 
 #define DECLARE_POINTER_COMPARATOR(type_name, ptr_type)                   \
-    DEFINE_COMPARATOR(type_name)(const void *a, const void *b) {          \
+    DEFINE_COMPARATOR(type_name) {                                        \
         return memcmp(*(ptr_type **)a, *(ptr_type **)b, sizeof(ptr_type)) \
             == 0;                                                         \
     }
@@ -39,26 +40,30 @@ DEFINE_COMPARATOR(uint);
 ///////////////////////////////// DESCTUCTORS //////////////////////////////////
 
 #define DECLARE_PAIR_DESTRUCTOR_HANDLE_FIRST(name, type1, type2, free_mtd) \
-    void name(void *ptr) { free_mtd(((PAIR(type1, type2) *)ptr)->first); }
+    void name(const void *super, void *ptr) {                              \
+        free_mtd(((PAIR(type1, type2) *)ptr)->first);                      \
+    }
 
 #define DECLARE_PAIR_DESTRUCTOR_HANDLE_SECOND(name, type1, type2, free_mtd) \
-    void name(void *ptr) { free_mtd(((PAIR(type1, type2) *)ptr)->second); }
+    void name(const void *super, void *ptr) {                               \
+        free_mtd(((PAIR(type1, type2) *)ptr)->second);                      \
+    }
 
 #define DECLARE_PAIR_DESTRUCTOR_HANDLE_BOTH(            \
     name, type1, type2, free_mtd1, free_mtd2            \
 )                                                       \
-    void name(void *ptr) {                              \
+    void name(const void *super, void *ptr) {           \
         free_mtd1(((PAIR(type1, type2) *)ptr)->first);  \
         free_mtd2(((PAIR(type1, type2) *)ptr)->second); \
     }
 
-#define DECLARE_DESTRUCTOR(name, type, free_mtd) \
-    void name(void *ptr) { free_mtd(*(type *)ptr); }
+#define DECLARE_DESTRUCTOR(_name, _type, _free_mtd) \
+    void _name(const void *super, _type *ptr) { _free_mtd(*(_type *)ptr); }
 
 /////////////////////////////// DEFAUL CONSTRUCTORS ///////////////////////////
 
 #define DEFINE_ZERO_DEFAULT_INIT(type_name) \
-    void type_name##_default_init(void *ptr)
+    void type_name##_default_init(const void *super, void *ptr)
 
 #define DECLARE_ZERO_DEFAULT_INIT(type_name, type) \
     DEFINE_ZERO_DEFAULT_INIT(type_name) { memset(ptr, 0, sizeof(type)); }

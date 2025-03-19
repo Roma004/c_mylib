@@ -4,9 +4,10 @@
 #include <stdint.h>
 
 struct el_manage {
+    const void *super;
     // optional:
-    void (*destroy)(void *);
-    void (*default_init)(void *);
+    void (*destroy)(const void *super, void *self);
+    void (*default_init)(const void *super, void *self);
 };
 
 #define __VECTOR_FIELDS(type) \
@@ -36,14 +37,6 @@ enum VEC_STATUS { VEC_ok = 0, VEC_memory_error, VEC_index_error };
 void vector_init(
     struct vector *vec, size_t el_size, const struct el_manage *mtds
 );
-
-/**
- * @brief Создать и инициализировать структуру вектора
- * @param[el_size] размер хранимого элемента
- * @param[mtds] методы управления элементами вектора
- * @return указатель на созданную структуру
- * */
-struct vector *vector_new(size_t el_size, const struct el_manage *mtds);
 
 /**
  * @brief добавить элемент в конец вектора.
@@ -81,22 +74,24 @@ enum VEC_STATUS vector_set(struct vector *vec, const void *src, size_t idx);
 
 void vector_clear(struct vector *vec);
 void vector_free(struct vector *vec);
-void vector_delete(struct vector *vec);
 
 #define VECTOR_SIZE(vec)    ((vec)->size)
 #define VECTOR_EL_SIZE(vec) ((vec)->el_size)
 
 #define VEC(vec) ((struct vector *)(vec))
 
-#define VECTOR_INIT(vec, _default_init, _destroy)                    \
-    {                                                                \
-        void (*init_fn)(typeof(*((vec)->data)) *) = _default_init;   \
-        void (*destroy_fn)(typeof(*((vec)->data)) *) = _destroy;     \
-        struct el_manage __mtds = {                                  \
-            .default_init = (void (*)(void *))init_fn,               \
-            .destroy = (void (*)(void *))destroy_fn,                 \
-        };                                                           \
-        vector_init((void *)(vec), sizeof(*((vec)->data)), &__mtds); \
+#define VECTOR_INIT(vec, _default_init, _destroy, _super)                       \
+    {                                                                           \
+        void (*init_fn)(const typeof(*_super) *, typeof(*((vec)->data)) *) =    \
+            _default_init;                                                      \
+        void (*destroy_fn)(const typeof(*_super) *, typeof(*((vec)->data)) *) = \
+            _destroy;                                                           \
+        struct el_manage __mtds = {                                             \
+            .default_init = (void (*)(const void *, void *))init_fn,            \
+            .destroy = (void (*)(const void *, void *))destroy_fn,              \
+            .super = _super,                                                    \
+        };                                                                      \
+        vector_init((void *)(vec), sizeof(*((vec)->data)), &__mtds);            \
     }
 
 #define VECTOR_PUSH_BACK(status, vec, _el)        \

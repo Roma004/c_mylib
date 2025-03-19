@@ -15,3 +15,9 @@ typedef int (*compar_t)(void *a, void *b);
 #define DIV_CEIL(a, b) ((a) + (b) - 1) / (b)
 
 #define MAYBE_UNUSED __attribute__((unused))
+
+#define PAIR(type1, type2) \
+    struct {               \
+        type1 first;       \
+        type2 second;      \
+    }
