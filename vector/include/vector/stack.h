@@ -15,3 +15,5 @@
 #define STACK_PUSH(status, st, el) VECTOR_PUSH_BACK(status, st, el)
 #define STACK_POP(status, st) \
     { status = vector_remove(VEC(st), STACK_SIZE(st) - 1); }
+
+#define STACK_FREE(st) vector_free(VEC(st))

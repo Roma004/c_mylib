@@ -1,14 +1,8 @@
 #pragma once
 
+#include "common.h"
 #include <stddef.h>
 #include <stdint.h>
-
-struct el_manage {
-    const void *super;
-    // optional:
-    void (*destroy)(const void *super, void *self);
-    void (*default_init)(const void *super, void *self);
-};
 
 #define __VECTOR_FIELDS(type) \
     type *data;               \
@@ -25,8 +19,6 @@ struct el_manage {
 struct vector {
     __VECTOR_FIELDS(void);
 };
-
-enum VEC_STATUS { VEC_ok = 0, VEC_memory_error, VEC_index_error };
 
 /**
  * @brief Инициализировать структуру вектора
@@ -56,9 +48,9 @@ enum VEC_STATUS vector_resize(struct vector *vec, size_t new_size);
 /**
  * @brief Добавить пространство для заданного количества элементов в конец
  *
- * - После этой опреации размер вектора увеличится на els_num.
- * - Размер выделенной памяти будет достаточен для хранения size + els_num
- *   элементов.
+ * - После этой опреации размер (size) вектора увеличится на els_num.
+ * - Размер выделенной памяти (capacity) будет достаточен для хранения
+ *   size + els_num элементов.
  * - Обращение по индексам диапазона [size, size+els_num) станет безопасным
  *   для записи, но чтение от туда - UB.
  * - если определён метод инициализации по-умолчанию, он будет вызван в новом
@@ -100,12 +92,14 @@ void vector_free(struct vector *vec);
         status = vector_push_back(VEC(vec), &el); \
     }
 
-#define VECTOR_ACCESS(vec, idx)                        \
-    ((typeof(*((vec)->data)) *)((uint8_t *)(vec)->data \
-                                + (idx) * (vec)->el_size))
+#define VECTOR_ACCESS(vec, idx) \
+    ((typeof(*(vec)->data) *)((uint8_t *)(vec)->data + (idx) * (vec)->el_size))
 
 #define VECTOR_ACCESS_RIHGT(vec, idx)                            \
     ((typeof(*((vec)->data)) *)((uint8_t *)(vec)->data           \
                                 + (VECTOR_SIZE(vec) - (idx) - 1) \
                                       * (vec)->el_size))
 
+#define VECTOR_FREE(vec) vector_free(VEC(vec))
+
+#define VECTOR_CLEAR(vec) vector_clear(VEC(vec))
