@@ -9,8 +9,6 @@ PROJ_OBJ = $(PROJ_FILES:$(SRC_DIR)/%.c=$(BUILD_DIR)/%.o)
 
 .PHONY: all $(PROJ_NAME)
 
-all: $(PROJ_NAME)
-
 $(PROJ_NAME): $(PROJ_LIB)
 
 $(PROJ_OBJ): $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c $(PROJ_HEADERS)
