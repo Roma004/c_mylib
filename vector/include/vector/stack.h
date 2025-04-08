@@ -17,3 +17,5 @@
     { status = vector_remove(VEC(st), STACK_SIZE(st) - 1); }
 
 #define STACK_FREE(st) vector_free(VEC(st))
+
+#define STACK_CLEAR(st) vector_clear(VEC(st))
