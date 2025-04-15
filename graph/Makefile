@@ -1,4 +1,4 @@
-PROJ_NAME = ioutil
+PROJ_NAME = graph
 
 include ../make/common.mk
 include ../make/shared_lib.mk

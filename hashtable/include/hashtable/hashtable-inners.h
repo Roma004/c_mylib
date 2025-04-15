@@ -12,7 +12,7 @@ enum busy { FREE = 0, BUSY, DEL };
 #define NODE_SIZE(tb) ((tb)->key_size + (tb)->val_size + sizeof(enum busy))
 
 #define NODE_KEY_PTR(tb, node) (void *)(node)
-#define NODE_VAL_PTR(tb, node)  (void *)((uint8_t *)(node) + (tb)->key_size)
+#define NODE_VAL_PTR(tb, node) (void *)((uint8_t *)(node) + (tb)->key_size)
 #define NODE_BUSY_PTR(tb, node) \
     (enum busy *)((uint8_t *)(node) + (tb)->key_size + (tb)->val_size)
 
@@ -20,6 +20,15 @@ enum busy { FREE = 0, BUSY, DEL };
 #define TB_NODE_KEY_PTR(tb, idx)  NODE_KEY_PTR(tb, TB_NODE_PTR(tb, idx))
 #define TB_NODE_VAL_PTR(tb, idx)  NODE_VAL_PTR(tb, TB_NODE_PTR(tb, idx))
 #define TB_NODE_BUSY_PTR(tb, idx) NODE_BUSY_PTR(tb, TB_NODE_PTR(tb, idx))
+
+#define TB_NODE_KEY_DESTROY(tb, node) \
+    (tb)->mtds.destroy_key((tb)->mtds.super, NODE_KEY_PTR(tb, node))
+#define TB_NODE_VAL_DESTROY(tb, node) \
+    (tb)->mtds.destroy_value((tb)->mtds.super, NODE_VAL_PTR(tb, node))
+
+#define TB_HASH(tb, key_ptr) (tb)->mtds.hash((tb)->mtds.super, key_ptr)
+#define TB_KEY_CMP(tb, key_a_ptr, key_b_ptr) \
+    (tb)->mtds.key_cmp((tb)->mtds.super, key_a_ptr, key_b_ptr)
 
 #define TB_CAPACITY(tb) (tb)->data.capacity
 
@@ -44,7 +53,7 @@ static inline void reset_data(HashTable *tb) {
 }
 
 static inline size_t hash(const HashTable *tb, const void *key) {
-    return tb->mtds.hash(key) % TB_CAPACITY(tb);
+    return TB_HASH(tb, key) % TB_CAPACITY(tb);
 }
 
 // значение по указателю будет скопировано
@@ -69,7 +78,8 @@ static inline enum TB_STATUS table_expand(HashTable *tb) {
     Vector(void) new_data, tmp;
     enum VEC_STATUS v_stt;
     vector_init(VEC(&new_data), tb->data.el_size, &tb->data.el_mtds);
-    if ((v_stt = vector_alloc_back(VEC(&new_data), TB_CAPACITY(tb) * MULTIPLIER))
+    if ((v_stt =
+             vector_alloc_back(VEC(&new_data), TB_CAPACITY(tb) * MULTIPLIER))
         != VEC_ok)
         return TB_memory_error;
 
