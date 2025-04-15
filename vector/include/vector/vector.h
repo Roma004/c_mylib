@@ -92,6 +92,12 @@ void vector_free(struct vector *vec);
         status = vector_push_back(VEC(vec), &el); \
     }
 
+#define VECTOR_ALLOC_BACK(status, vec, _num) \
+    { status = vector_alloc_back(VEC(vec), _num); }
+
+#define VECTOR_REMOVE(status, vec, _idx) \
+    { status = vector_remove(VEC(vec), _idx); }
+
 #define VECTOR_ACCESS(vec, idx) \
     ((typeof(*(vec)->data) *)((uint8_t *)(vec)->data + (idx) * (vec)->el_size))
 
